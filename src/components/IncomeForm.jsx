@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase"; //
-import toast from "react-hot-toast";
+import  useExpenseStore  from "../store/useExpenseStore";
 
-export default function IncomeForm({ incomes, setIncomes }) {
-  const [income, setIncome] = useState([]);
+export default function IncomeForm() {
+  const { income, fetchAllData, addIncome } = useExpenseStore();
   const [loading, setLoading] = useState(true);
   const [newIncome, setNewIncome] = useState({
     date: "",
@@ -14,49 +13,25 @@ export default function IncomeForm({ incomes, setIncomes }) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  useEffect(() => {
-    fetchIncomes();
-  }, []);
+    useEffect(() => {
+    fetchAllData().then(() => setLoading(false));
+  }, [fetchAllData]);
 
-  const fetchIncomes = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("income")
-      .select("*")
-      .order("date", { ascending: false });
-
-    if (!error) {
-      setIncome(data);
-    }
-    setLoading(false);
-  };
-  const handleAddIncome = async (e) => {
+    const handleAddIncome = async (e) => {
     e.preventDefault();
 
     const { date, source, amount } = newIncome;
+    const newItem = {
+      date,
+      source,
+      amount: parseFloat(amount),
+    };
 
-    const { error } = await supabase.from("income").insert([
-      {
-        date,
-        source,
-        amount,
-      },
-    ]);
+    await addIncome(newItem);
 
-    if (!error) {
-      // Optimistically add new data to UI
-      setIncome((prev) => [
-        {
-          date,
-          source,
-          amount,
-        },
-        ...prev,
-      ]);
-
-      // Clear form
-      setNewIncome({ date: "", source: "", amount: "" });
-    }
+    // Clear form after successful submission
+    setNewIncome({ date: "", source: "", amount: ""});
+    fetchAllData();
   };
 
   const totalPages = Math.ceil(income.length / itemsPerPage);
@@ -122,7 +97,7 @@ export default function IncomeForm({ incomes, setIncomes }) {
         <h2 className="text-lg font-semibold mb-4">Expense Table</h2>
         {loading ? (
           <p>Loading...</p>
-        ) : incomes.length === 0 ? (
+        ) : income.length === 0 ? (
           <p className="text-center text-gray-500">No expense records found.</p>
         ) : (
           <>

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase"; // make sure supabaseClient is correctly imported
+import useExpenseStore from "../store/useExpenseStore";
 
 function ExpenseForm() {
-  const [expenses, setExpenses] = useState([]);
+  const { expense, fetchAllData, addExpense } = useExpenseStore();
   const [loading, setLoading] = useState(true);
   const [newExpense, setNewExpense] = useState({
     date: "",
@@ -13,65 +13,37 @@ function ExpenseForm() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Fetch expenses on mount
   useEffect(() => {
-    fetchExpenses();
-  }, []);
-
-  const fetchExpenses = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("expense")
-      .select("*")
-      .order("date", { ascending: false });
-
-    if (!error) {
-      setExpenses(data);
-    }
-    setLoading(false);
-  };
+    fetchAllData().then(() => setLoading(false));
+  }, [fetchAllData]);
 
   const handleAddExpense = async (e) => {
     e.preventDefault();
 
     const { date, item, quantity, price } = newExpense;
-    const total = parseFloat(quantity) * parseFloat(price);
+    const newItem = {
+      date,
+      item,
+      quantity: parseFloat(quantity),
+      price: parseFloat(price),
+      total: parseFloat(quantity) * parseFloat(price),
+    };
 
-    const { error } = await supabase.from("expense").insert([
-      {
-        date,
-        item,
-        quantity: parseFloat(quantity),
-        price: parseFloat(price),
-        total,
-      },
-    ]);
+    await addExpense(newItem);
 
-    if (!error) {
-      // Optimistically add new data to UI
-      setExpenses((prev) => [
-        {
-          date,
-          item,
-          quantity: parseFloat(quantity),
-          price: parseFloat(price),
-          total,
-        },
-        ...prev,
-      ]);
-
-      // Clear form
-      setNewExpense({ date: "", item: "", quantity: "", price: "" });
-    }
+    // Clear form after successful submission
+    setNewExpense({ date: "", item: "", quantity: "", price: "" });
+    fetchAllData();
   };
 
-  const totalPages = Math.ceil(expenses.length / itemsPerPage);
+  const totalPages = Math.ceil(expense.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentItems = expenses.slice(startIndex, startIndex + itemsPerPage);
+  const currentItems = expense.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <div className="max-w-3xl mx-auto p-4">
       <h1 className="text-xl font-bold mb-4">Add Expense</h1>
+
       <form onSubmit={handleAddExpense} className="grid grid-cols-2 gap-4">
         <input
           type="date"
@@ -111,9 +83,10 @@ function ExpenseForm() {
 
       <div className="mt-10">
         <h2 className="text-lg font-semibold mb-4">Expense Table</h2>
+
         {loading ? (
           <p>Loading...</p>
-        ) : expenses.length === 0 ? (
+        ) : expense.length === 0 ? (
           <p className="text-center text-gray-500">No expense records found.</p>
         ) : (
           <>
@@ -157,9 +130,7 @@ function ExpenseForm() {
                 {Array.from({ length: totalPages }, (_, i) => (
                   <button
                     key={i}
-                    className={`join-item btn ${
-                      currentPage === i + 1 ? "btn-active" : ""
-                    }`}
+                    className={`join-item btn ${currentPage === i + 1 ? "btn-active" : ""}`}
                     onClick={() => setCurrentPage(i + 1)}
                   >
                     {i + 1}
@@ -168,9 +139,7 @@ function ExpenseForm() {
 
                 <button
                   className="join-item btn"
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(p + 1, totalPages))
-                  }
+                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                   disabled={currentPage === totalPages}
                 >
                   Next »

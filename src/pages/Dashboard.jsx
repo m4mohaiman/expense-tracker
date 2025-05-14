@@ -7,12 +7,24 @@ import CompareChart from "../components/CompareChart";
 import ProportionChart from "../components/ProportionChart";
 import IncomeExpenseLineChart from "../components/IncomeExpenseLineChart";
 import { supabase } from "../lib/supabase"; // Adjust the import path as necessary
+import useExpenseStore from "../store/useExpenseStore";
 
 export default function Dashboard() {
+const fetchAllData = useExpenseStore((state) => state.fetchAllData);
+const totalIncome = useExpenseStore((state) => state.totalIncome);
+const totalExpense = useExpenseStore((state) => state.totalExpense);
+const balance = useExpenseStore((state) => state.balance);
+
+  useEffect(() => {
+    fetchAllData();
+  }, [fetchAllData]);
+
+
+  console.log(totalIncome, totalExpense, balance);
   const [incomes, setIncomes] = useState([]);
   const [expenses, setExpenses] = useState([]);
-  const [totalExpense, setTotalExpense] = useState(0);
-  const [totalIncome, setTotalIncome] = useState(0);
+  // const [totalExpense, setTotalExpense] = useState(0);
+  // const [totalIncome, setTotalIncome] = useState(0);
 
   useEffect(() => {
     const savedIncomes = JSON.parse(localStorage.getItem("incomes")) || [];
@@ -21,28 +33,25 @@ export default function Dashboard() {
     setExpenses(savedExpenses);
   }, []);
 
-  useEffect(() => {
-    fetchExpenses();
-    fetchIncome();
-  }, []);
 
-  const fetchExpenses = async () => {
-    const { data, error } = await supabase.from("expense").select("total");
-    if (!error && data) {
-      const sum = data.reduce((acc, curr) => acc + parseFloat(curr.total), 0);
-      setTotalExpense(sum);
-    }
-  };
 
-  const fetchIncome = async () => {
-    const { data, error } = await supabase.from("income").select("amount");
-    if (!error && data) {
-      const sum = data.reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
-      setTotalIncome(sum);
-    }
-  };
+  // const fetchExpenses = async () => {
+  //   const { data, error } = await supabase.from("expense").select("total");
+  //   if (!error && data) {
+  //     const sum = data.reduce((acc, curr) => acc + parseFloat(curr.total), 0);
+  //     setTotalExpense(sum);
+  //   }
+  // };
 
-  const balance = totalIncome - totalExpense;
+  // const fetchIncome = async () => {
+  //   const { data, error } = await supabase.from("income").select("amount");
+  //   if (!error && data) {
+  //     const sum = data.reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
+  //     setTotalIncome(sum);
+  //   }
+  // };
+
+  //const balance = totalIncome - totalExpense;
 
   const addExpense = (expense) => {
     const updatedExpenses = [expense, ...expenses];
