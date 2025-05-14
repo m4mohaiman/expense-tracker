@@ -6,10 +6,13 @@ import ExpenseTable from "../components/ExpenseTable";
 import CompareChart from "../components/CompareChart";
 import ProportionChart from "../components/ProportionChart";
 import IncomeExpenseLineChart from "../components/IncomeExpenseLineChart";
+import { supabase } from "../lib/supabase"; // Adjust the import path as necessary
 
 export default function Dashboard() {
   const [incomes, setIncomes] = useState([]);
   const [expenses, setExpenses] = useState([]);
+  const [totalExpense, setTotalExpense] = useState(0);
+  const [totalIncome, setTotalIncome] = useState(0);
 
   useEffect(() => {
     const savedIncomes = JSON.parse(localStorage.getItem("incomes")) || [];
@@ -18,9 +21,26 @@ export default function Dashboard() {
     setExpenses(savedExpenses);
   }, []);
 
+  useEffect(() => {
+    fetchExpenses();
+    fetchIncome();
+  }, []);
 
-const totalIncome = incomes.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-const totalExpense = expenses.reduce((sum, item) => sum + Number(item.total || 0), 0);
+  const fetchExpenses = async () => {
+    const { data, error } = await supabase.from("expense").select("total");
+    if (!error && data) {
+      const sum = data.reduce((acc, curr) => acc + parseFloat(curr.total), 0);
+      setTotalExpense(sum);
+    }
+  };
+
+  const fetchIncome = async () => {
+    const { data, error } = await supabase.from("income").select("amount");
+    if (!error && data) {
+      const sum = data.reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
+      setTotalIncome(sum);
+    }
+  };
 
   const balance = totalIncome - totalExpense;
 
@@ -38,14 +58,10 @@ const totalExpense = expenses.reduce((sum, item) => sum + Number(item.total || 0
 
   return (
     <div className="max-w-5xl mx-auto p-4">
-      <div className="w-full pt-5 pb-5"> 
-        
+      <div className="w-full pt-5 pb-5">
         <IncomeExpenseLineChart incomes={incomes} expenses={expenses} />
 
-        <CompareChart
-          totalIncome={totalIncome}
-          totalExpense={totalExpense}
-        />
+        <CompareChart totalIncome={totalIncome} totalExpense={totalExpense} />
         <ProportionChart
           totalIncome={totalIncome}
           totalExpense={totalExpense}
@@ -94,10 +110,6 @@ const totalExpense = expenses.reduce((sum, item) => sum + Number(item.total || 0
         />
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <IncomeTable incomes={incomes} />
-        <ExpenseTable expenses={expenses} />
-      </div>
     </div>
   );
 }

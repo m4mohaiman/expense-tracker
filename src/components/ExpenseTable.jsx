@@ -1,99 +1,42 @@
-// import { useEffect, useState } from "react";
-// import { getFromLocalStorage } from "../utils/storage";
-// import { paginate } from "../utils/paginate";
+import { useState, useEffect } from "react";
+import { supabase } from "../lib/supabase"; // Adjust the import path as necessary
 
-// export default function ExpenseTable() {
-//   const [expenses, setExpenses] = useState([]);
-//   const [currentPage, setCurrentPage] = useState(1);
-//   const itemsPerPage = 5;
-
-//   useEffect(() => {
-//     const stored = getFromLocalStorage("expenses");
-//     setExpenses(stored);
-//   }, []);
-
-//   const pagedData = paginate(expenses, currentPage, itemsPerPage);
-//   const totalPages = Math.ceil(expenses.length / itemsPerPage);
-
-//   return (
-//     <div className="w-full my-6 max-w-4xl mx-auto">
-//       <h2 className="text-2xl font-semibold mb-4">💸 Expense Records</h2>
-//       <div className="overflow-x-auto rounded-box border border-base-300">
-//         <table className="table table-zebra">
-//         <thead className="bg-base-200">
-//           <tr>
-//             <th>#</th>
-//             <th>Date</th>
-//             <th>Item</th>
-//             <th>Qty</th>
-//             <th>Unit Price</th>
-//             <th>Total</th>
-//           </tr>
-//         </thead>
-//         <tbody>
-//           {pagedData.map((exp, i) => (
-//             <tr key={i}>
-//               <td>{(currentPage - 1) * itemsPerPage + i + 1}</td>
-//               <td>{exp.date}</td>
-//               <td>{exp.item}</td>
-//               <td>{exp.quantity}</td>
-//               <td>{exp.price}</td>
-//               <td>{exp.total}</td>
-//             </tr>
-//           ))}
-//         </tbody>
-//       </table>
-//       </div>
-  
-
-//       {/* Pagination */}
-//       <div className="flex justify-end mt-4">
-//         <div className="join">
-//           {/* Previous button */}
-//           <button
-//             className="join-item btn"
-//             onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-//             disabled={currentPage === 1}
-//           >
-//             « Prev
-//           </button>
-
-//           {/* Page numbers */}
-//           {Array.from({ length: totalPages }, (_, i) => (
-//             <button
-//               key={i}
-//               className={`join-item btn ${
-//                 currentPage === i + 1 ? "btn-active" : ""
-//               }`}
-//               onClick={() => setCurrentPage(i + 1)}
-//             >
-//               {i + 1}
-//             </button>
-//           ))}
-
-//           {/* Next button */}
-//           <button
-//             className="join-item btn"
-//             onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-//             disabled={currentPage === totalPages}
-//           >
-//             Next »
-//           </button>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-import { useState } from "react";
-
- function ExpenseTable({ expenses = [] }) {
+function ExpenseTable() {
+  const [expenses, setExpenses] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
   const totalPages = Math.ceil(expenses.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentItems = expenses.slice(startIndex, startIndex + itemsPerPage);
+  const grandTotal = expenses.reduce(
+    (acc, item) => acc + parseFloat(item.total),
+    0
+  );
+
+  useEffect(() => {
+    const fetchExpenses = async () => {
+      const { data, error } = await supabase
+        .from("expense")
+        .select("*")
+        .order("date", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching expenses:", error.message);
+      } else {
+        setExpenses(data);
+      }
+
+      setLoading(false);
+    };
+
+    fetchExpenses();
+  }, []);
+
+  if (loading) {
+    return <p className="text-center mt-10">Loading...</p>;
+  }
 
   return (
     <div className="mt-10">
@@ -103,7 +46,7 @@ import { useState } from "react";
       ) : (
         <>
           <div className="overflow-x-auto">
-            <table className="table table-zebra w-full">
+            <table className="table table-zebra w-full min-w-[600px]">
               <thead>
                 <tr>
                   <th>#</th>
@@ -118,7 +61,7 @@ import { useState } from "react";
                 {currentItems.map((item, index) => (
                   <tr key={startIndex + index}>
                     <td>{startIndex + index + 1}</td>
-                    <td>{item.date}</td>
+                    <td>{new Date(item.date).toLocaleDateString("en-GB")}</td>
                     <td>{item.item}</td>
                     <td>{item.quantity}</td>
                     <td>{parseFloat(item.price).toFixed(2)}</td>
@@ -127,6 +70,12 @@ import { useState } from "react";
                 ))}
               </tbody>
             </table>
+            <div className="text-right mt-2 font-bold">
+              Grand Total:{" "}
+              <span className="text-green-600">
+                {grandTotal.toFixed(2)} BDT
+              </span>
+            </div>
           </div>
 
           <div className="flex justify-end mt-4">
