@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import  useExpenseStore  from "../store/useExpenseStore";
+import  useExpenseStore  from "../store/useExpenseIncomeStore";
 
 export default function IncomeForm() {
   const { income, fetchAllData, addIncome } = useExpenseStore();

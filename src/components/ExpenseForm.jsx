@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import useExpenseStore from "../store/useExpenseStore";
+import useExpenseStore from "../store/useExpenseIncomeStore";
 
 function ExpenseForm() {
   const { expense, fetchAllData, addExpense } = useExpenseStore();

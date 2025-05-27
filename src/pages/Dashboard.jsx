@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import IncomeForm from "../components/IncomeForm";
 import ExpenseForm from "../components/ExpenseForm";
-import IncomeTable from "../components/IncomeTable";
-import ExpenseTable from "../components/ExpenseTable";
 import CompareChart from "../components/CompareChart";
 import ProportionChart from "../components/ProportionChart";
 import IncomeExpenseLineChart from "../components/IncomeExpenseLineChart";
-import { supabase } from "../lib/supabase"; // Adjust the import path as necessary
-import useExpenseStore from "../store/useExpenseStore";
+import useExpenseStore from "../store/useExpenseIncomeStore";
+
 
 export default function Dashboard() {
 const fetchAllData = useExpenseStore((state) => state.fetchAllData);
@@ -34,25 +32,6 @@ const balance = useExpenseStore((state) => state.balance);
   }, []);
 
 
-
-  // const fetchExpenses = async () => {
-  //   const { data, error } = await supabase.from("expense").select("total");
-  //   if (!error && data) {
-  //     const sum = data.reduce((acc, curr) => acc + parseFloat(curr.total), 0);
-  //     setTotalExpense(sum);
-  //   }
-  // };
-
-  // const fetchIncome = async () => {
-  //   const { data, error } = await supabase.from("income").select("amount");
-  //   if (!error && data) {
-  //     const sum = data.reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
-  //     setTotalIncome(sum);
-  //   }
-  // };
-
-  //const balance = totalIncome - totalExpense;
-
   const addExpense = (expense) => {
     const updatedExpenses = [expense, ...expenses];
     setExpenses(updatedExpenses);
@@ -67,16 +46,7 @@ const balance = useExpenseStore((state) => state.balance);
 
   return (
     <div className="max-w-5xl mx-auto p-4">
-      <div className="w-full pt-5 pb-5">
-        <IncomeExpenseLineChart incomes={incomes} expenses={expenses} />
-
-        <CompareChart totalIncome={totalIncome} totalExpense={totalExpense} />
-        <ProportionChart
-          totalIncome={totalIncome}
-          totalExpense={totalExpense}
-        />
-      </div>
-      <div className="w-full">
+           <div className="w-full">
         <div className="my-6">
           <div className="stats shadow w-full">
             <div className="stat">
@@ -106,6 +76,16 @@ const balance = useExpenseStore((state) => state.balance);
           </div>
         </div>
       </div>
+      <div className="w-full pt-5 pb-5">
+        <IncomeExpenseLineChart incomes={incomes} expenses={expenses} />
+
+        <CompareChart totalIncome={totalIncome} totalExpense={totalExpense} />
+        <ProportionChart
+          totalIncome={totalIncome}
+          totalExpense={totalExpense}
+        />
+      </div>
+ 
       <div className="grid md:grid-cols-2 gap-6">
         <IncomeForm
           incomes={incomes}
